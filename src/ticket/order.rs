@@ -1,14 +1,29 @@
 use super::plans::sort_plans;
 use super::structs::{Plan, PlanCondition};
 
-pub fn order_price(plan_condition: PlanCondition) -> Option<i32> {
-    order(plan_condition).map(|plan| plan.price)
+pub struct AllPlans {
+    pub sorted_plans: Vec<Plan>,
 }
 
-pub fn order(plan_condition: PlanCondition) -> Option<Plan> {
-    sort_plans()
-        .into_iter()
-        .find(|plan| plan.is_satisfied_by(&plan_condition))
+impl AllPlans {
+    pub fn new() -> AllPlans {
+        AllPlans {
+            sorted_plans: sort_plans(),
+        }
+    }
+
+    pub fn order(&self, condition: &PlanCondition) -> Option<&Plan> {
+        self.sorted_plans
+            .iter()
+            .find(|&plan| plan.is_satisfied_by(&condition))
+    }
+
+    pub fn order_price(&self, condition: &PlanCondition) -> Option<i32> {
+        match self.order(condition) {
+            Option::Some(plan) => Option::Some(plan.price),
+            Option::None => Option::None,
+        }
+    }
 }
 
 #[test]
@@ -23,5 +38,7 @@ fn test_plans() {
         },
         local_date_time: LocalDateTime::date_from_str("2020/03/20 13:00:00"),
     };
-    assert_eq!(1000, order_price(plan_condition).unwrap());
+
+    let all_plans = AllPlans::new();
+    assert_eq!(Option::Some(1000), all_plans.order_price(&plan_condition));
 }

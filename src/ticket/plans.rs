@@ -2,70 +2,135 @@ use super::business_day_specification::BusinessDaySpec;
 use super::customer_specification::CustomerSpec;
 use super::late_specification::{LateSpec8, LateSpecification};
 use super::plan_specification::PlanSpecification;
-use super::specification::{AndSpecification, NotSpecification, OrSpecification, Specification};
+use super::specification::{Spec, Specification};
 use super::structs::{Customer, DateFromStr, Gender, Identification, LocalDate, LocalDateTime};
 use super::structs::{Plan, PlanCondition, PlanName};
+use std::sync::Once;
 
 fn plans() -> Vec<Plan> {
-    let weekday_notlate_plans = vec![
+    let make_plan = |name, price, spec| Plan {
+        name: name,
+        price: price,
+        spec: spec,
+    };
+
+    fn make_weekday_notlate_plan(name: PlanName, customer_spec: CustomerSpec, price: i32) -> Plan {
         Plan {
-            name: PlanName::CinemaCitizenSenior,
-            price: 1000,
+            name: name,
+            price: price,
             spec: PlanSpecification {
-                customer_spec: Box::new(CustomerSpec::CinemaCitizenSenior),
-                business_day_spec_opt: Option::Some(Box::new(AndSpecification {
-                    spec1: Box::new(BusinessDaySpec::Weekday),
-                    spec2: Box::new(NotSpecification {
-                        spec: Box::new(LateSpec8),
-                    }),
-                })),
+                customer_spec: Box::new(customer_spec),
+                business_day_spec_opt: Option::Some(Spec::And(
+                    Box::new(Spec::Normal(Box::new(BusinessDaySpec::Weekday))),
+                    Box::new(Spec::Not(Box::new(Spec::Normal(Box::new(LateSpec8))))),
+                )),
                 movie_day_spec_opt: Option::None,
             },
-        },
-        Plan {
-            name: PlanName::CinemaCitizen,
-            price: 1000,
-            spec: PlanSpecification {
-                customer_spec: Box::new(CustomerSpec::CinematicCitizen),
-                business_day_spec_opt: Option::Some(Box::new(AndSpecification {
-                    spec1: Box::new(BusinessDaySpec::Weekday),
-                    spec2: Box::new(NotSpecification {
-                        spec: Box::new(LateSpec8),
-                    }),
-                })),
-                movie_day_spec_opt: Option::None,
-            },
-        },
-        Plan {
-            name: PlanName::General,
-            price: 1800,
-            spec: PlanSpecification {
-                customer_spec: Box::new(CustomerSpec::General),
-                business_day_spec_opt: Option::Some(Box::new(AndSpecification {
-                    spec1: Box::new(BusinessDaySpec::Weekday),
-                    spec2: Box::new(NotSpecification {
-                        spec: Box::new(LateSpec8),
-                    }),
-                })),
-                movie_day_spec_opt: Option::None,
-            },
-        },
-        Plan {
-            name: PlanName::General,
-            price: 1800,
-            spec: PlanSpecification {
-                customer_spec: Box::new(CustomerSpec::General),
-                business_day_spec_opt: Option::Some(Box::new(AndSpecification {
-                    spec1: Box::new(BusinessDaySpec::Weekday),
-                    spec2: Box::new(NotSpecification {
-                        spec: Box::new(LateSpec8),
-                    }),
-                })),
-                movie_day_spec_opt: Option::None,
-            },
-        },
+        }
+    };
+
+    let mut weekday_notlate_plans = vec![
+        make_weekday_notlate_plan(
+            PlanName::CinemaCitizenSenior,
+            CustomerSpec::CinemaCitizenSenior,
+            1000,
+        ),
+        make_weekday_notlate_plan(
+            PlanName::CinemaCitizen,
+            CustomerSpec::CinematicCitizen,
+            1000,
+        ),
+        make_weekday_notlate_plan(PlanName::General, CustomerSpec::General, 1800),
+        make_weekday_notlate_plan(PlanName::Senior, CustomerSpec::Senior, 1100),
+        make_weekday_notlate_plan(
+            PlanName::UniversityStudent,
+            CustomerSpec::UniversityStudent,
+            1500,
+        ),
+        make_weekday_notlate_plan(
+            PlanName::HighSchoolStudent,
+            CustomerSpec::HighSchoolStudent,
+            1000,
+        ),
     ];
-    weekday_notlate_plans
+
+    fn make_weekday_late_plan(name: PlanName, customer_spec: CustomerSpec, price: i32) -> Plan {
+        Plan {
+            name: name,
+            price: price,
+            spec: PlanSpecification {
+                customer_spec: Box::new(customer_spec),
+                business_day_spec_opt: Option::Some(Spec::And(
+                    Box::new(Spec::Normal(Box::new(BusinessDaySpec::Weekday))),
+                    Box::new(Spec::Normal(Box::new(LateSpec8))),
+                )),
+                movie_day_spec_opt: Option::None,
+            },
+        }
+    };
+    let mut weekday_late_plans = vec![
+        make_weekday_late_plan(
+            PlanName::CinemaCitizen,
+            CustomerSpec::CinematicCitizen,
+            1000,
+        ),
+        make_weekday_late_plan(
+            PlanName::CinemaCitizenSenior,
+            CustomerSpec::CinematicCitizen,
+            1000,
+        ),
+        make_weekday_late_plan(PlanName::Senior, CustomerSpec::Senior, 1100),
+        make_weekday_late_plan(PlanName::General, CustomerSpec::General, 1300),
+        make_weekday_late_plan(
+            PlanName::UniversityStudent,
+            CustomerSpec::UniversityStudent,
+            1300,
+        ),
+        make_weekday_late_plan(
+            PlanName::HighSchoolStudent,
+            CustomerSpec::HighSchoolStudent,
+            1000,
+        ),
+    ];
+
+    fn make_holiday_notlate_plan(name: PlanName, customer_spec: CustomerSpec, price: i32) -> Plan {
+        Plan {
+            name: name,
+            price: price,
+            spec: PlanSpecification {
+                customer_spec: Box::new(customer_spec),
+                business_day_spec_opt: Option::Some(Spec::And(
+                    Box::new(Spec::Normal(Box::new(BusinessDaySpec::Holiday))),
+                    Box::new(Spec::Not(Box::new(Spec::Normal(Box::new(LateSpec8))))),
+                )),
+                movie_day_spec_opt: Option::None,
+            },
+        }
+    };
+    let mut holiday_notlate_plans = vec![
+        make_holiday_notlate_plan(
+            PlanName::CinemaCitizen,
+            CustomerSpec::CinematicCitizen,
+            1300,
+        ),
+        make_holiday_notlate_plan(
+            PlanName::CinemaCitizenSenior,
+            CustomerSpec::CinemaCitizenSenior,
+            1000,
+        ),
+        make_holiday_notlate_plan(
+            PlanName::CinemaCitizenSenior,
+            CustomerSpec::CinemaCitizenSenior,
+            1100,
+        ),
+        make_holiday_notlate_plan(PlanName::General, CustomerSpec::General, 1800),
+    ];
+
+    let mut all_plans = Vec::new();
+    all_plans.append(&mut weekday_notlate_plans);
+    all_plans.append(&mut weekday_late_plans);
+    all_plans.append(&mut holiday_notlate_plans);
+    all_plans
 }
 
 fn sort(mut plans: Vec<Plan>) -> Vec<Plan> {

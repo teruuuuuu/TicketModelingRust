@@ -1,22 +1,17 @@
-// use super::business_day_specification::BusinessDaySpec;
-// use super::customer_specification::CustomerSpec;
-// use super::late_specification::{LateSpec8, LateSpecification};
-// use super::movie_day_specification::{MovieDaySpec, MovieDaySpecification};
-use super::specification::Specification;
+use super::specification::{Spec, Specification};
 use super::structs::{Customer, LocalDate, LocalDateTime, PlanCondition};
 
 #[derive(Debug)]
 pub struct PlanSpecification {
     pub customer_spec: Box<dyn Specification<Customer>>,
-    pub business_day_spec_opt: Option<Box<dyn Specification<LocalDateTime>>>,
-    pub movie_day_spec_opt: Option<Box<dyn Specification<LocalDate>>>,
+    pub business_day_spec_opt: Option<Spec<LocalDateTime>>,
+    pub movie_day_spec_opt: Option<Spec<LocalDate>>,
 }
-
 impl PlanSpecification {
     pub fn new(
         customer_spec: Box<dyn Specification<Customer>>,
-        business_day_spec_opt: Option<Box<dyn Specification<LocalDateTime>>>,
-        movie_day_spec_opt: Option<Box<dyn Specification<LocalDate>>>,
+        business_day_spec_opt: Option<Spec<LocalDateTime>>,
+        movie_day_spec_opt: Option<Spec<LocalDate>>,
     ) -> Result<PlanSpecification, &'static str> {
         if business_day_spec_opt.is_some() && movie_day_spec_opt.is_some() {
             Err("PlanSpecification::new Error because both business day and movie day")
@@ -62,17 +57,16 @@ fn test_plan_spec() {
     let err_result1 =
         PlanSpecification::new(Box::new(CustomerSpec::General), Option::None, Option::None);
     assert!(err_result1.is_err());
-
     let err_result2 = PlanSpecification::new(
         Box::new(CustomerSpec::General),
-        Option::Some(Box::new(LateSpec8)),
-        Option::Some(Box::new(MovieDaySpec)),
+        Option::Some(Spec::Normal(Box::new(LateSpec8))),
+        Option::Some(Spec::Normal(Box::new(MovieDaySpec))),
     );
     assert!(err_result2.is_err());
 
     let ok_result1 = PlanSpecification::new(
         Box::new(CustomerSpec::CinematicCitizen),
-        Option::Some(Box::new(LateSpec8)),
+        Option::Some(Spec::Normal(Box::new(LateSpec8))),
         Option::None,
     );
     assert!(ok_result1.is_ok());

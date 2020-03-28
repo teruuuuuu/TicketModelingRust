@@ -1,8 +1,7 @@
 use chrono::{Date, Datelike, Local};
 
 use super::specification::Specification;
-
-type LocalDate = Date<Local>;
+use super::structs::LocalDate;
 
 pub const MovieDaySpec: MovieDaySpecification = MovieDaySpecification {};
 

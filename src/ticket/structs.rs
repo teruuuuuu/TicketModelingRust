@@ -1,7 +1,6 @@
 use super::plan_specification::PlanSpecification;
 use super::specification::Specification;
 use chrono::{Date, DateTime, Datelike, Local, TimeZone};
-use std::fmt::Display;
 
 pub type LocalDate = Date<Local>;
 pub type LocalDateTime = DateTime<Local>;
@@ -12,14 +11,13 @@ pub struct Plan {
     pub price: i32,
     pub spec: PlanSpecification,
 }
-
 impl Plan {
     pub fn is_satisfied_by(&self, plan_condition: &PlanCondition) -> bool {
         self.spec.is_satisfied_by(&plan_condition)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PlanName {
     CinemaCitizen,
     CinemaCitizenSenior,
@@ -51,27 +49,27 @@ pub struct PlanCondition {
     pub local_date_time: LocalDateTime,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Gender {
     Male,
     Female,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum StudentCard {
     University,
     HighSchool,
     Elementary,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Identification {
     MembershipCard,
     DisabilityHandbook,
     Student(StudentCard),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Customer {
     pub birth_day: LocalDate,
     pub gender: Gender,

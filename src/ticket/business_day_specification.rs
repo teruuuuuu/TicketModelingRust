@@ -3,6 +3,7 @@ use chrono::{Datelike, Weekday};
 use super::specification::Specification;
 use super::structs::{LocalDate, LocalDateTime};
 
+#[warn(dead_code)]
 pub enum BusinessDaySpec {
     Weekday,
     Holiday,

@@ -1,42 +1,29 @@
+#[derive(Debug)]
+pub enum Spec<T> {
+    Normal(Box<dyn Specification<T>>),
+    And(Box<Spec<T>>, Box<Spec<T>>),
+    Or(Box<Spec<T>>, Box<Spec<T>>),
+    Not(Box<Spec<T>>),
+}
+
+impl<T> Specification<T> for Spec<T> {
+    fn is_satisfied_by(&self, arg: &T) -> bool {
+        match self {
+            Spec::Normal(spec) => spec.is_satisfied_by(arg),
+            Spec::And(spec1, spec2) => spec1.is_satisfied_by(arg) && spec2.is_satisfied_by(arg),
+            Spec::Or(spec1, spec2) => spec1.is_satisfied_by(arg) || spec2.is_satisfied_by(arg),
+            Spec::Not(spec) => !spec.is_satisfied_by(arg),
+        }
+    }
+}
+
 pub trait Specification<T> {
     fn is_satisfied_by(&self, arg: &T) -> bool;
 }
 
-impl<T> std::fmt::Debug for dyn Specification<T> {
+impl<T: ?Sized> std::fmt::Debug for dyn Specification<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "")
-    }
-}
-
-pub struct OrSpecification<T> {
-    spec1: Box<dyn Specification<T>>,
-    spec2: Box<dyn Specification<T>>,
-}
-
-impl<T> Specification<T> for OrSpecification<T> {
-    fn is_satisfied_by(&self, arg: &T) -> bool {
-        self.spec1.is_satisfied_by(arg) || self.spec2.is_satisfied_by(arg)
-    }
-}
-
-pub struct AndSpecification<T> {
-    pub spec1: Box<dyn Specification<T>>,
-    pub spec2: Box<dyn Specification<T>>,
-}
-
-impl<T> Specification<T> for AndSpecification<T> {
-    fn is_satisfied_by(&self, arg: &T) -> bool {
-        self.spec1.is_satisfied_by(arg) && self.spec2.is_satisfied_by(arg)
-    }
-}
-
-pub struct NotSpecification<T> {
-    pub spec: Box<dyn Specification<T>>,
-}
-
-impl<T> Specification<T> for NotSpecification<T> {
-    fn is_satisfied_by(&self, arg: &T) -> bool {
-        !self.spec.is_satisfied_by(arg)
     }
 }
 
@@ -53,27 +40,25 @@ fn test_specification() {
     }
     specification!(i32);
 
-    let one_specification = 1;
-    assert!(one_specification.is_satisfied_by(&1));
-    assert!(!one_specification.is_satisfied_by(&2));
+    assert!(1.is_satisfied_by(&1));
+    assert!(!1.is_satisfied_by(&2));
 
-    let two_specification = 2;
-    let or_specification = OrSpecification {
-        spec1: Box::new(one_specification),
-        spec2: Box::new(two_specification),
-    };
+    let or_specification = Spec::Or(
+        Box::new(Spec::Normal(Box::new(1))),
+        Box::new(Spec::Normal(Box::new(2))),
+    );
     assert!(or_specification.is_satisfied_by(&1));
     assert!(!or_specification.is_satisfied_by(&3));
 
-    let and_specification1 = AndSpecification {
-        spec1: Box::new(one_specification),
-        spec2: Box::new(two_specification),
-    };
+    let and_specification1 = Spec::And(
+        Box::new(Spec::Normal(Box::new(1))),
+        Box::new(Spec::Normal(Box::new(2))),
+    );
     assert!(!and_specification1.is_satisfied_by(&1));
 
-    let and_specification2 = AndSpecification {
-        spec2: Box::new(one_specification),
-        ..and_specification1
-    };
+    let and_specification2 = Spec::And(
+        Box::new(Spec::Normal(Box::new(1))),
+        Box::new(Spec::Not(Box::new(Spec::Normal(Box::new(2))))),
+    );
     assert!(and_specification2.is_satisfied_by(&1));
 }
