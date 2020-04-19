@@ -17,6 +17,8 @@ impl Plan {
     }
 }
 
+unsafe impl Sync for Plan {}
+
 #[derive(Debug, Clone)]
 pub enum PlanName {
     CinemaCitizen,
